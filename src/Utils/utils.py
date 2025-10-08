@@ -5,6 +5,7 @@ import os
 import re
 from typing import Tuple, Optional
 from typing import List
+from moviepy.video.io.VideoFileClip import VideoFileClip
 
 logger = logging.getLogger(__name__)
 
@@ -169,3 +170,23 @@ def get_image_paths_from_folder(folder_path: str, extensions: List[str] = ['.bmp
         if any(f.lower().endswith(ext) for ext in extensions)
     ]
     return sorted(image_paths)
+
+def convert_mkv_to_mp4(input_path: str, output_dir: str) -> None:
+    """
+    Converts a .mkv video file to .mp4 format using moviepy.
+    The output video will have the same name as the input video and be saved in the specified output directory.
+
+    Args:
+        input_path (str): Path to the input .mkv video file.
+        output_dir (str): Directory to save the output .mp4 video file.
+    """
+    try:
+        base_name = os.path.splitext(os.path.basename(input_path))[0]
+        output_path = os.path.join(output_dir, f"{base_name}.mp4")
+
+        clip = VideoFileClip(input_path)
+        clip.write_videofile(output_path, codec='libx264', audio_codec='aac')
+
+        print(f"✅ Conversion successful: {output_path}")
+    except Exception as e:
+        print(f"❌ Conversion failed: {e}")
