@@ -1,0 +1,21 @@
+version: "3.9"
+
+services:
+  stabstitch:
+    container_name: stabstitch-gpu
+    build: .
+    image: pytorch-cuda12-base
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    tty: true
+    stdin_open: true
+    command: ["/bin/bash"]

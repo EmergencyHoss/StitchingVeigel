@@ -190,3 +190,54 @@ def convert_mkv_to_mp4(input_path: str, output_dir: str) -> None:
         print(f"✅ Conversion successful: {output_path}")
     except Exception as e:
         print(f"❌ Conversion failed: {e}")
+
+import os
+import cv2
+from typing import List, Tuple
+
+def resize_and_crop_images(input_folder: str, output_folder: str, target_size: Tuple[int, int] = (480, 360)) -> List[str]:
+    """
+    Reads all image files from a folder, resizes them to the target size (default 480x360),
+    and crops them if necessary to maintain the aspect ratio. Saves processed images to a new folder.
+
+    Args:
+        input_folder (str): Path to the folder containing input images.
+        output_folder (str): Path to the folder where processed images will be saved.
+        target_size (Tuple[int, int]): Desired output resolution (width, height).
+
+    Returns:
+        List[str]: List of paths to the processed images.
+    """
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    processed_images = []
+    target_width, target_height = target_size
+
+    for filename in sorted(os.listdir(input_folder)):
+        if filename.lower().endswith(('.bmp', '.jpg', '.jpeg', '.png')):
+            input_path = os.path.join(input_folder, filename)
+            image = cv2.imread(input_path)
+            if image is None:
+                print(f"Warning: Could not read image {input_path}")
+                continue
+
+            # Resize while maintaining aspect ratio
+            height, width = image.shape[:2]
+            scale_w = target_width / width
+            scale_h = target_height / height
+            scale = max(scale_w, scale_h)
+            resized_width = int(width * scale)
+            resized_height = int(height * scale)
+            resized_image = cv2.resize(image, (resized_width, resized_height))
+
+            # Crop to target size
+            start_x = (resized_width - target_width) // 2
+            start_y = (resized_height - target_height) // 2
+            cropped_image = resized_image[start_y:start_y + target_height, start_x:start_x + target_width]
+
+            output_path = os.path.join(output_folder, filename)
+            cv2.imwrite(output_path, cropped_image)
+            processed_images.append(output_path)
+
+    return processed_images
