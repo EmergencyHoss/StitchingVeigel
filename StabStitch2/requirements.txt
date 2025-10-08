@@ -1,0 +1,11 @@
+matplotlib
+tqdm
+pyyaml
+tensorboard
+einops
+imageio
+moviepy
+pandas
+scipy
+opencv-python
+stitching
