@@ -3,7 +3,8 @@ import logging
 import cv2
 import os
 import re
-from typing import Tuple
+from typing import Tuple, Optional
+from typing import List
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +84,6 @@ def read_video(video_path: str) -> cv2.VideoCapture:
         return None
     return cap
 
-
 def natural_sort_key(s: str) -> list:
     """
     Generates a key for natural sorting of strings with embedded numbers.
@@ -91,35 +91,51 @@ def natural_sort_key(s: str) -> list:
     return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s)]
 
 def create_video_from_images(image_folder: str, output_dir: str, output_format: str = ".mp4",
-                             resolution: Tuple[int, int] = (1920, 1080), framerate: int = 20) -> None:
+                             resolution: Optional[Tuple[int, int]] = None, framerate: int = 20) -> None:
     """
-    Creates a video from .bmp images in a specified folder. The output video filename is derived from the image folder name.
+    Creates a video from images in a specified folder. The output video filename is derived from the image folder name.
 
     Args:
-        image_folder (str): Path to the folder containing .bmp images.
+        image_folder (str): Path to the folder containing images.
         output_dir (str): Directory to save the output video file.
         output_format (str): Video file format (e.g., '.mp4', '.avi').
-        resolution (Tuple[int, int]): Resolution of the output video (width, height).
+        resolution (Tuple[int, int], optional): Resolution of the output video (width, height). If None, uses image resolution.
         framerate (int): Frames per second for the output video.
     """
     image_files = [
         os.path.join(image_folder, f)
         for f in os.listdir(image_folder)
-        if f.lower().endswith('.bmp')
+        if f.lower().endswith(('.bmp', '.jpg', '.jpeg', '.png'))
     ]
 
-    # Sort using natural sort to ensure numeric order
     image_files.sort(key=natural_sort_key)
 
     if not image_files:
-        print("No .bmp image files found in the folder.")
+        print("No image files found in the folder.")
         return
 
     folder_name = os.path.basename(os.path.normpath(image_folder))
     output_filename = f"{folder_name}{output_format}"
     output_path = os.path.join(output_dir, output_filename)
 
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v') if output_format == ".mp4" else cv2.VideoWriter_fourcc(*'XVID')
+    # Read first image to determine resolution if not provided
+    first_image = cv2.imread(image_files[0])
+    if first_image is None:
+        print(f"Error: Could not read the first image {image_files[0]}")
+        return
+
+    if resolution is None:
+        resolution = (first_image.shape[1], first_image.shape[0])  # (width, height)
+
+    # Choose codec based on format
+    codec_map = {
+        ".mp4": 'mp4v',
+        ".avi": 'XVID',
+        ".mov": 'MJPG',
+        ".mkv": 'X264'
+    }
+    fourcc = cv2.VideoWriter_fourcc(*codec_map.get(output_format.lower(), 'mp4v'))
+
     video_writer = cv2.VideoWriter(output_path, fourcc, framerate, resolution)
 
     for image_file in image_files:
@@ -127,10 +143,29 @@ def create_video_from_images(image_folder: str, output_dir: str, output_format: 
         if img is None:
             print(f"Warning: Could not read image {image_file}")
             continue
-        resized_img = cv2.resize(img, resolution)
-        video_writer.write(resized_img)
+        if resolution != (img.shape[1], img.shape[0]):
+            img = cv2.resize(img, resolution)
+        video_writer.write(img)
 
     video_writer.release()
-    print(f"Video saved to {output_path}")
+    print(f"✅ Video saved to: {output_path}")
+
 
    
+def get_image_paths_from_folder(folder_path: str, extensions: List[str] = ['.bmp', '.jpg', '.jpeg', '.png']) -> List[str]:
+    """
+    Returns a sorted list of image file paths from a folder.
+
+    Args:
+        folder_path (str): Path to the folder containing images.
+        extensions (List[str]): List of allowed image file extensions.
+
+    Returns:
+        List[str]: Sorted list of image file paths.
+    """
+    image_paths = [
+        os.path.join(folder_path, f)
+        for f in os.listdir(folder_path)
+        if any(f.lower().endswith(ext) for ext in extensions)
+    ]
+    return sorted(image_paths)
