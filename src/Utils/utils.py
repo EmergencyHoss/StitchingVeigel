@@ -60,7 +60,7 @@ def extract_frames_from_video(video_path: str, output_dir: str = None) -> None:
             break  # End of video
 
         # Save frame as image
-        frame_filename = os.path.join(frame_folder, f"frame_{frame_count:05d}.jpg")
+        frame_filename = os.path.join(frame_folder, f"frame_{frame_count:05d}.png")
         cv2.imwrite(frame_filename, frame)
         frame_count += 1
 
@@ -241,3 +241,25 @@ def resize_and_crop_images(input_folder: str, output_folder: str, target_size: T
             processed_images.append(output_path)
 
     return processed_images
+
+def crop_images(input_folder: str, output_folder: str, target_crop: Tuple[int, int] = (1920, 800)):
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    for filename in os.listdir(input_folder):
+       img_path = os.path.join(input_folder, filename)
+       img = cv2.imread(img_path)
+       if img is None:
+           print(f"Could not read {img_path}")
+           continue
+       
+       h, w = img.shape[:2]
+       target_width, target_height = target_crop
+
+       # Center crop
+       x_start = max((w - target_width) // 2, 0)
+       y_start = max((h - target_height) // 2, 0)
+       cropped_image = img[y_start:y_start+target_height, x_start:x_start+target_width]
+       
+       out_path = os.path.join(output_folder, filename)
+       cv2.imwrite(out_path, cropped_image)
