@@ -25,3 +25,4 @@ list1 = utils.get_image_paths_from_folder(folder_path=r"data\images\3900001419")
 list2 = utils.get_image_paths_from_folder(folder_path=r"data\images\3900001421")
 
 stitch_image_pairs(list1, list2)
+
