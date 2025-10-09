@@ -27,14 +27,14 @@ def read_parquet_file(path: str) -> pd.DataFrame:
         logger.error(f"Failed to read {path}: {e}")
         return pd.DataFrame()
     
-
-def extract_frames_from_video(video_path: str, output_dir: str = None) -> None:
+def extract_frames_from_video(video_path: str, output_dir: str = None, output_format: str = "png") -> None:
     """
     Extracts frames from a video file and saves them as images in a folder named after the video file.
 
     Args:
         video_path (str): Path to the video file.
         output_dir (str, optional): Directory where the folder will be created. Defaults to the video's directory.
+        output_format (str, optional): Image format for saved frames (e.g., 'png', 'jpg'). Defaults to 'png'.
     """
     # Get the base name of the video file (without extension)
     video_name = os.path.splitext(os.path.basename(video_path))[0]
@@ -61,6 +61,8 @@ def extract_frames_from_video(video_path: str, output_dir: str = None) -> None:
 
         # Save frame as image
         frame_filename = os.path.join(frame_folder, f"frame_{frame_count:05d}.png")
+        # Save frame as image with specified format
+        frame_filename = os.path.join(frame_folder, f"frame_{frame_count:05d}.{output_format}")
         cv2.imwrite(frame_filename, frame)
         frame_count += 1
 
